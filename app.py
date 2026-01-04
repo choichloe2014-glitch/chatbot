@@ -46,31 +46,38 @@ def delete_all_memo():
 def get_cat_image_url():
     return f"https://cataas.com/cat?time={time.time()}"  
 
-user_input = st.text_input("대화를 시작하세요")
-
+#세션 메시지 저장공간
 if "chat_log" not in st.session_state:
     st.session_state.chat_log = []
 
 if "memo" not in st.session_state:
-    st.session_state.memo = []    
+    st.session_state.memo = []
 
-for role, msg, msg_type in st.session_state.chat_log:
-    if msg_type == "text":
-        st.write(f"{role}: {msg}")
-    elif msg_type == 'image':
-        st.image(msg, width=300)       
+for msg in st.session_state.chat_log:
+    with st.chat_message(msg["role"]):
+        if msg.get("image"):
+            st.image(msg["image"])
+        else:
+            st.write(msg["content"])
 
-user_input = st.text_input("대화를 시작하세요",key="chat_input")
+#chat_input
+user_msg = st.chat_input("메시지를 입력하세요.")   
 
+if user_msg:
+    with st.chat_message("user"):
+        st.write(user_msg)
+    st.session_state.chat_log.append({"role":"user","type":"text","content": user_msg})
 
-if st.button("SEND"):
-    if user_input.strip():
-    #USER messege
-        st.session_state.chat_log.append(("You",user_input, "text"))
-    #bot_messege
-    reply_type, bot_reply = get_reply(user_input)
-    st.session_state.chat_log.append(("Bot", bot_reply, reply_type))
-    #clear the input
-    st.session_state.chat_input =""
+    #bot reply
+    reply_type, reply_msg = get_reply(user_msg)
+
+    if reply_type == "image":
+        with st.chat_message("assistant"):
+            st.image(reply_msg)
+        st.session_state.chat_log.append({"role":"assistant", "type": "image", "image": reply_msg})
+    else:
+        with st.chat_message("assistant"):
+            st.write(reply_msg)
+        st.session_state.chat_log.append({"role": "assistant", "type": "text", "content": reply_msg})            
 
 
